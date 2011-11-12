@@ -36,11 +36,6 @@ namespace Gibbed.Skyrim.FileFormats
             throw new NotImplementedException();
         }
 
-        public void Serialize(Stream output)
-        {
-            throw new NotImplementedException();
-        }
-
         public void Deserialize(Stream input)
         {
             input.Seek(0, SeekOrigin.Begin);

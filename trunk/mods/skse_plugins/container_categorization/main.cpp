@@ -77,6 +77,6 @@ bool plugin_load(const SKSEInterface *skse)
 		return false;
 	}
 
-	_MESSAGE("applying patching");
+	_MESSAGE("applying patch");
 	return patch_code(target, nops, 2);
 }

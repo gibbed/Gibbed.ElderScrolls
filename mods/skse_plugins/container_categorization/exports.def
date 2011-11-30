@@ -1,0 +1,4 @@
+LIBRARY	"container_categorization"
+EXPORTS
+	SKSEPlugin_Query=plugin_query
+	SKSEPlugin_Load=plugin_load

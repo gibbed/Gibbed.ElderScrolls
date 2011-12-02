@@ -23,6 +23,6 @@
 #ifndef __STANDARDITEMDATA
 #define __STANDARDITEMDATA
 
-bool patch_StandardItemData(HMODULE module);
+bool patch_StandardItemData(UInt32 version);
 
 #endif

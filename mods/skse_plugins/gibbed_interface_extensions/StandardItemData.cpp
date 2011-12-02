@@ -22,181 +22,235 @@
 
 #include <windows.h>
 #include <math.h>
+#include <skse/skse_version.h>
 
-#include "patch.hpp"
+#include "../skse/SafeWrite.h"
 #include "StandardItemData.hpp"
 
-typedef struct
+namespace Scaleform
 {
-	unsigned char data[1];
-}
-item_form;
-
-unsigned int ADDRESS_player_character;
-
-unsigned int ADDRESS_get_form_type;
-unsigned char get_form_type(item_form *thiz)
-{
-	__asm
+	struct _Addresses
 	{
-		mov ecx, thiz
-		call ADDRESS_get_form_type
+		UInt32 ScaleformCreateBool;
+		UInt32 ScaleformCreateNumber;
+		UInt32 ScaleformSetMember;
+	}
+	Addresses;
+
+	void SetupAddresses1_1(void)
+	{
+		memset(&Addresses, 0xCC, sizeof(Addresses));
+
+		Addresses.ScaleformCreateBool = 0x00999B60;
+		Addresses.ScaleformCreateNumber = 0x00999B80;
+		Addresses.ScaleformSetMember = 0x00999BD0;
+	}
+
+	typedef struct
+	{
+		unsigned char unknown[16];
+	}
+	GFxValue;
+
+	GFxValue *CreateBool(GFxValue *gfxv, bool value)
+	{
+		UInt32 func = Addresses.ScaleformCreateBool;
+		unsigned int ivalue = (unsigned int)value;
+
+		__asm
+		{
+			push ivalue
+			mov ecx, gfxv
+			call func
+		}
+	}
+
+	GFxValue *CreateNumber(GFxValue *gfxv, double value)
+	{
+		UInt32 func = Addresses.ScaleformCreateNumber;
+		unsigned int *ivalue = (unsigned int *)&value;
+		unsigned int value_a = ivalue[0];
+		unsigned int value_b = ivalue[1];
+
+		__asm
+		{
+			push value_b
+			push value_a
+			mov ecx, gfxv
+			call func
+		}
+	}
+
+	void SetMember(void *obj, const char *name, GFxValue *value)
+	{
+		UInt32 func = Addresses.ScaleformSetMember;
+		__asm
+		{
+			push value
+			push name
+			mov ecx, obj
+			call func
+		}
+	}
+
+	void SetMemberBool(void *obj, const char *name, bool value)
+	{
+		GFxValue gfxv;
+		CreateBool(&gfxv, value);
+		SetMember(obj, name, &gfxv);
+	}
+
+	void SetMemberNumber(void *obj, const char *name, double value)
+	{
+		GFxValue gfxv;
+		CreateNumber(&gfxv, value);
+		SetMember(obj, name, &gfxv);
 	}
 }
 
-unsigned int ADDRESS_get_form_weight;
-double get_form_weight(item_form *thiz)
+namespace Game
 {
-	__asm
+	struct _Addresses
 	{
-		push thiz
-		call ADDRESS_get_form_weight
-		add esp, 4
+		UInt32 PlayerCharacter;
+	
+		UInt32 GetFormType;
+		UInt32 GetFormWeight;
+
+		UInt32 GetItemValue;
+		UInt32 GetItemDamage;
+		UInt32 GetItemArmor;
+
+		UInt32 SetupStandardItemData;
+		UInt32 GetStandardItemData;
 	}
-}
+	Addresses;
 
-typedef struct
-{
-	item_form *form;
-}
-item_runtime;
-
-unsigned int ADDRESS_get_item_value;
-int get_item_value(item_runtime *thiz)
-{
-	__asm
+	void SetupAddresses1_1(void)
 	{
-		mov ecx, thiz
-		call ADDRESS_get_item_value
+		memset(&Addresses, 0xCC, sizeof(Addresses));
+
+		Addresses.PlayerCharacter = 0x0155C064;
+
+		Addresses.GetFormType = 0x00403100;
+		Addresses.GetFormWeight = 0x0047F5C0;
+
+		Addresses.GetItemValue = 0x004A8470;
+		Addresses.GetItemDamage = 0x00854A60;
+		Addresses.GetItemArmor = 0x00854720;
+
+		Addresses.SetupStandardItemData = 0x00999C40;
+		Addresses.GetStandardItemData = 0x009999C0;
 	}
-}
 
-unsigned int ADDRESS_get_item_damage;
-double get_item_damage(item_runtime *item)
-{
-	void *pc = *(void **)ADDRESS_player_character;
-
-	__asm
+	typedef struct
 	{
-		push item
-		mov ecx, pc
-		call ADDRESS_get_item_damage
+		unsigned char data[1];
 	}
-}
+	Form;
 
-unsigned int ADDRESS_get_item_armor;
-double get_item_armor(item_runtime *item)
-{
-	void *pc = *(void **)ADDRESS_player_character;
-
-	__asm
+	unsigned char GetFormType(Form *form)
 	{
-		push item
-		mov ecx, pc
-		call ADDRESS_get_item_armor
+		UInt32 func = Addresses.GetFormType;
+		__asm
+		{
+			mov ecx, form
+			call func
+		}
 	}
-}
 
-typedef struct
-{
-	unsigned int vtable;
-	item_runtime *item;
-	void *unknown08;
-	unsigned int unknown0C;
-	unsigned int unknown10;
-	unsigned int unknown14;
-	unsigned int unknown18;
-	unsigned int unknown1C;
-}
-StandardItemData;
-
-typedef struct
-{
-	unsigned char unknown[16];
-}
-scaleform_value;
-
-unsigned int ADDRESS_scaleform_create_boolean;
-scaleform_value *scaleform_create_boolean(scaleform_value *thiz, bool value)
-{
-	unsigned int ivalue = (unsigned int)value;
-
-	__asm
+	double GetFormWeight(Form *form)
 	{
-		push ivalue
-		mov ecx, thiz
-		call ADDRESS_scaleform_create_boolean
+		UInt32 func = Addresses.GetFormWeight;
+		__asm
+		{
+			push form
+			call func
+			add esp, 4
+		}
 	}
-}
 
-
-unsigned int ADDRESS_scaleform_create_double;
-scaleform_value *scaleform_create_double(scaleform_value *thiz, double value)
-{
-	unsigned int *ivalue = (unsigned int *)&value;
-	unsigned int value_a = ivalue[0];
-	unsigned int value_b = ivalue[1];
-
-	__asm
+	typedef struct
 	{
-		push value_b
-		push value_a
-		mov ecx, thiz
-		call ADDRESS_scaleform_create_double
+		Form *form;
 	}
-}
+	Item;
 
-unsigned int ADDRESS_scaleform_add_variable = 0;
-void scaleform_add_variable(void *list, const char *name, scaleform_value *value)
-{
-	__asm
+	int GetItemValue(Item *item)
 	{
-		push value
-		push name
-		mov ecx, list
-		call ADDRESS_scaleform_add_variable
+		UInt32 func = Addresses.GetItemValue;
+		__asm
+		{
+			mov ecx, item
+			call func
+		}
 	}
-}
 
-unsigned int ADDRESS_setup_standard_data = 0;
-void setup_standard_data(StandardItemData *thiz, item_runtime *item, int a2)
-{
-	__asm
+	double GetItemDamage(Item *item)
 	{
-		push a2
-		push item
-		mov ecx, thiz
-		call ADDRESS_setup_standard_data
-	}
-}
+		UInt32 func = Addresses.GetItemValue;
+		void *pc = *(void **)Addresses.PlayerCharacter;
 
-unsigned int ADDRESS_get_standard_data = 0;
-StandardItemData *get_standard_data(
-	StandardItemData *thiz,
-	void **callbacks, item_runtime *item, int a4)
-{
-	__asm
+		__asm
+		{
+			push item
+			mov ecx, pc
+			call func
+		}
+	}
+
+	double GetItemArmor(Item *item)
 	{
-		push a4
-		push item
-		push callbacks
-		mov ecx, thiz
-		call ADDRESS_get_standard_data
+		UInt32 func = Addresses.GetItemArmor;
+		void *pc = *(void **)Addresses.PlayerCharacter;
+
+		__asm
+		{
+			push item
+			mov ecx, pc
+			call func
+		}
 	}
-}
 
-void scaleform_add_boolean(void *list, const char *name, bool value)
-{
-	scaleform_value var;
-	scaleform_create_boolean(&var, value);
-	scaleform_add_variable(list, name, &var);
-}
+	typedef struct
+	{
+		unsigned int vtable;
+		Item *item;
+		void *unknown08;
+		unsigned int unknown0C;
+		unsigned int unknown10;
+		unsigned int unknown14;
+		unsigned int unknown18;
+		unsigned int unknown1C;
+	}
+	StandardItemData;
 
-void scaleform_add_double(void *list, const char *name, double value)
-{
-	scaleform_value var;
-	scaleform_create_double(&var, value);
-	scaleform_add_variable(list, name, &var);
+	void SetupStandardItemData(StandardItemData *sid, Item *item, int a2)
+	{
+		UInt32 func = Addresses.SetupStandardItemData;
+		__asm
+		{
+			push a2
+			push item
+			mov ecx, sid
+			call func
+		}
+	}
+
+	StandardItemData *GetStandardItemData(
+		StandardItemData *sid,
+		void **callbacks, Item *item, int a4)
+	{
+		UInt32 func = Addresses.GetStandardItemData;
+		__asm
+		{
+			push a4
+			push item
+			push callbacks
+			mov ecx, sid
+			call func
+		}
+	}
 }
 
 double round(double r)
@@ -204,11 +258,12 @@ double round(double r)
 	return (r >= 0.0) ? floor(r + 0.5) : ceil(r - 0.5);
 }
 
-StandardItemData * __stdcall my_get_standard_data(
-	StandardItemData *thiz,
-	void **callbacks, item_runtime *item, int a4)
+Game::StandardItemData * __stdcall MyGetStandardItemData(
+	Game::StandardItemData *sid,
+	void **callbacks, Game::Item *item, int a4)
 {
-	StandardItemData *info = get_standard_data(thiz, callbacks, item, a4);
+	Game::StandardItemData *info =
+		Game::GetStandardItemData(sid, callbacks, item, a4);
 	
 	if (*callbacks == NULL ||
 		item->form == NULL)
@@ -216,30 +271,30 @@ StandardItemData * __stdcall my_get_standard_data(
 		return info;
 	}
 
-	unsigned char formType = get_form_type(item->form);
+	unsigned char formType = Game::GetFormType(item->form);
 
-	double weight = get_form_weight(item->form);
+	double weight = Game::GetFormWeight(item->form);
 	weight = max(0.0f, weight);
 
-	int value = get_item_value(item);
+	int value = Game::GetItemValue(item);
 
 	//_MESSAGE("item %u %f %d", formType, weight, value);
 
-	scaleform_add_boolean(&info->unknown10, "extended", true);
-	scaleform_add_double(&info->unknown10, "formType", (double)formType);
-	scaleform_add_double(&info->unknown10, "weight", (double)weight);
-	scaleform_add_double(&info->unknown10, "value", (double)value);
+	Scaleform::SetMemberBool(&info->unknown10, "extended", true);
+	Scaleform::SetMemberNumber(&info->unknown10, "formType", (double)formType);
+	Scaleform::SetMemberNumber(&info->unknown10, "weight", (double)weight);
+	Scaleform::SetMemberNumber(&info->unknown10, "value", (double)value);
 
 	switch (formType)
 	{
 		case 27: // armor
 		{
-			double armor = get_item_armor(item);
+			double armor = Game::GetItemArmor(item);
 			armor = round(armor);
 
 			//_MESSAGE("  armor %f", armor);
 
-			scaleform_add_double(&info->unknown10, "armor", armor);
+			Scaleform::SetMemberNumber(&info->unknown10, "armor", armor);
 			break;
 		}
 
@@ -247,24 +302,24 @@ StandardItemData * __stdcall my_get_standard_data(
 		{
 			unsigned char weaponType = item->form->data[0xC4+0x31];
 			
-			double damage = get_item_damage(item);
+			double damage = Game::GetItemDamage(item);
 			damage = round(damage);
 
 			//_MESSAGE("  weapon type %u damage %f", weaponType, damage);
 
-			scaleform_add_double(&info->unknown10, "weaponType", (double)weaponType);
-			scaleform_add_double(&info->unknown10, "damage", damage);
+			Scaleform::SetMemberNumber(&info->unknown10, "weaponType", (double)weaponType);
+			Scaleform::SetMemberNumber(&info->unknown10, "damage", damage);
 			break;
 		}
 
 		case 44: // ammo
 		{
-			double damage = get_item_damage(item);
+			double damage = Game::GetItemDamage(item);
 			damage = round(damage);
 
 			//_MESSAGE("  damage %f", damage);
 
-			scaleform_add_double(&info->unknown10, "damage", damage);
+			Scaleform::SetMemberNumber(&info->unknown10, "damage", damage);
 			break;
 		}
 
@@ -277,7 +332,7 @@ StandardItemData * __stdcall my_get_standard_data(
 	return info;
 }
 
-void __declspec(naked) my_get_standard_data_stub(void)
+void __declspec(naked) stub_MyGetStandardItemData(void)
 {
 	__asm
 	{
@@ -286,39 +341,40 @@ void __declspec(naked) my_get_standard_data_stub(void)
 		push [ebp+16] ; unknown
 		push [ebp+12] ; item
 		push [ebp+8] ; localizer?
-		push ecx ; thiz
-		call my_get_standard_data
+		push ecx ; this
+		call MyGetStandardItemData
 		pop ebp
 		ret 12
 	}
 }
 
-bool patch_StandardItemData(HMODULE module)
+bool patch_StandardItemData(UInt32 version)
 {
-	unsigned char original[] = { 0xE8, 0xAA, 0x02, 0x00, 0x00 };
-	unsigned int target = adjust_address(module, 0x00999711);
-	
-	if (memcmp((void *)target, original, sizeof(original)) != 0)
+	UInt32 functionCall;
+
+	switch (version)
 	{
-		return false;
+		case RUNTIME_VERSION_1_1_21_0:
+		{
+			Scaleform::SetupAddresses1_1();
+			Game::SetupAddresses1_1();
+			functionCall = 0x00999711;
+
+			unsigned char original[] = { 0xE8, 0xAA, 0x02, 0x00, 0x00 };
+			if (memcmp((void *)functionCall, original, sizeof(original)) != 0)
+			{
+				return false;
+			}
+
+			break;
+		}
+
+		default:
+		{
+			return false;
+		}
 	}
-	
-	ADDRESS_player_character = adjust_address(module, 0x0155C064);
 
-	ADDRESS_get_form_type = adjust_address(module, 0x00403100);
-	ADDRESS_get_form_weight = adjust_address(module, 0x0047F5C0);
-
-	ADDRESS_get_item_value = adjust_address(module, 0x004A8470);
-	ADDRESS_get_item_damage = adjust_address(module, 0x00854A60);
-	ADDRESS_get_item_armor = adjust_address(module, 0x00854720);
-
-	ADDRESS_scaleform_create_boolean = adjust_address(module, 0x00999B60);
-	ADDRESS_scaleform_create_double = adjust_address(module, 0x00999B80);
-	ADDRESS_scaleform_add_variable = adjust_address(module, 0x00999BD0);
-
-	ADDRESS_setup_standard_data = adjust_address(module, 0x00999C40);
-	ADDRESS_get_standard_data = adjust_address(module, 0x009999C0);
-
-	return patch_call_absolute(target, (unsigned int)&my_get_standard_data_stub);
+	WriteRelCall(functionCall, (UInt32)&stub_MyGetStandardItemData);
+	return true;
 }
-

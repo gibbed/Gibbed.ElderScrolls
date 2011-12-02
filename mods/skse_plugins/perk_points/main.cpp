@@ -24,34 +24,11 @@
 #include <shlwapi.h>
 
 #include <skse/PluginAPI.h>
+#include <skse/skse_version.h>
+
+#include "../skse/SafeWrite.h"
 
 #include "dll.hpp"
-#include "patch.hpp"
-
-bool plugin_query(const SKSEInterface *skse, PluginInfo *info)
-{
-	_MESSAGE("query");
-
-	info->infoVersion = PluginInfo::kInfoVersion;
-	info->name = "perk points";
-	info->version = 2;
-
-	if (skse->isEditor != 0)
-	{
-		_ERROR("no need to funktify perk points in the editor!");
-		return false;
-	}
-
-	if (skse->runtimeVersion != 0x01150000 &&
-		skse->runtimeVersion != 0x020C0000)
-	{
-		_ERROR("unsupported runtime version");
-		return false;
-	}
-
-	_MESSAGE("runtime version = %08X", skse->runtimeVersion);
-	return true;
-}
 
 struct _perk_points_config
 {
@@ -86,8 +63,34 @@ void load_config()
 		return;
 	}
 
-	config.points_per_level = (unsigned char)(GetPrivateProfileIntW(L"perk_points", L"points_per_level", 2, path) & 0xFF);
+	config.points_per_level = (unsigned char)(GetPrivateProfileIntW(
+		L"perk_points", L"points_per_level", 2, path) & 0xFF);
 	_MESSAGE("perk points per level = %u", config.points_per_level);
+}
+
+bool plugin_query(const SKSEInterface *skse, PluginInfo *info)
+{
+	_MESSAGE("query");
+
+	info->infoVersion = PluginInfo::kInfoVersion;
+	info->name = "perk points";
+	info->version = 2;
+
+	if (skse->isEditor != 0)
+	{
+		_ERROR("no need to funktify perk points in the editor!");
+		return false;
+	}
+
+	if (skse->runtimeVersion != RUNTIME_VERSION_1_1_21_0 &&
+		skse->runtimeVersion != RUNTIME_VERSION_1_2_12_0)
+	{
+		_ERROR("unsupported runtime version");
+		return false;
+	}
+
+	_MESSAGE("runtime version = %08X", skse->runtimeVersion);
+	return true;
 }
 
 bool plugin_load(const SKSEInterface *skse)
@@ -96,22 +99,18 @@ bool plugin_load(const SKSEInterface *skse)
 
 	unsigned char original[] = { 0x83, 0xC2 };
 
-	HMODULE exe = GetModuleHandle(NULL);
-
 	unsigned int target = 0;
 
 	switch (skse->runtimeVersion)
 	{
-		case 0x01150000: target = 0x009E8528; break;
-		case 0x020C0000: target = 0x009E885D; break;
+		case RUNTIME_VERSION_1_1_21_0: target = 0x009E8528; break;
+		case RUNTIME_VERSION_1_2_12_0: target = 0x009E885D; break;
 
 		default:
 		{
 			return false;
 		}
 	}
-
-	target = adjust_address(exe, target);
 
 	if (memcmp((void *)target, original, 2) != 0)
 	{
@@ -120,5 +119,6 @@ bool plugin_load(const SKSEInterface *skse)
 	}
 
 	_MESSAGE("applying patch");
-	return patch_bytes(target + 2, &config.points_per_level, sizeof(config.points_per_level));
+	SafeWriteBuf(target + 2, &config.points_per_level, sizeof(config.points_per_level));
+	return true;
 }

@@ -21,18 +21,15 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="patch.cpp">
+    <ClCompile Include="StandardItemData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StandardItemData.cpp">
+    <ClCompile Include="..\skse\SafeWrite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="patch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="StandardItemData.hpp">

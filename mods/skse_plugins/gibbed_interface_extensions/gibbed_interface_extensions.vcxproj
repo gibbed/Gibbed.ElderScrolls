@@ -82,16 +82,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\skse\SafeWrite.cpp" />
     <ClCompile Include="dll.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="patch.cpp" />
     <ClCompile Include="StandardItemData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="patch.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="StandardItemData.hpp" />
   </ItemGroup>

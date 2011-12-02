@@ -21,6 +21,7 @@
  */
 
 #include <windows.h>
+#include <skse/skse_version.h>
 #include <skse/PluginAPI.h>
 
 #include "StandardItemData.hpp"
@@ -39,7 +40,7 @@ bool plugin_query(const SKSEInterface *skse, PluginInfo *info)
 		return false;
 	}
 
-	if (skse->runtimeVersion != 0x01150000)
+	if (skse->runtimeVersion != RUNTIME_VERSION_1_1_21_0)
 	{
 		_ERROR("unsupported runtime version");
 		return false;
@@ -51,20 +52,16 @@ bool plugin_query(const SKSEInterface *skse, PluginInfo *info)
 
 bool plugin_load(const SKSEInterface *skse)
 {
-	HMODULE exe = GetModuleHandle(NULL);
-
-	if (skse->runtimeVersion == 0x01150000)
-	{
-		if (patch_StandardItemData(exe) == false)
-		{
-			_ERROR("StandardItemData patch failure");
-			return false;
-		}
-
-		return true;
-	}
-	else
+	if (skse->runtimeVersion != RUNTIME_VERSION_1_1_21_0)
 	{
 		return false;
 	}
+
+	if (patch_StandardItemData(skse->runtimeVersion) == false)
+	{
+		_ERROR("StandardItemData patch failure");
+		return false;
+	}
+
+	return true;
 }

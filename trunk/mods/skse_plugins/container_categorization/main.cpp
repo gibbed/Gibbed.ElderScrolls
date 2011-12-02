@@ -21,9 +21,10 @@
  */
 
 #include <windows.h>
+#include <skse/skse_version.h>
 #include <skse/PluginAPI.h>
 
-#include "patch.hpp"
+#include "../skse/SafeWrite.h"
 
 bool plugin_query(const SKSEInterface *skse, PluginInfo *info)
 {
@@ -39,8 +40,8 @@ bool plugin_query(const SKSEInterface *skse, PluginInfo *info)
 		return false;
 	}
 
-	if (skse->runtimeVersion != 0x01150000 &&
-		skse->runtimeVersion != 0x020C0000)
+	if (skse->runtimeVersion != RUNTIME_VERSION_1_1_21_0 &&
+		skse->runtimeVersion != RUNTIME_VERSION_1_2_12_0)
 	{
 		_ERROR("unsupported runtime version");
 		return false;
@@ -55,14 +56,12 @@ bool plugin_load(const SKSEInterface *skse)
 	unsigned char nops[] = { 0x90, 0x90 };
 	unsigned char original[] = { 0x75, 0x20 };
 
-	HMODULE exe = GetModuleHandle(NULL);
-
-	unsigned int target = 0;
+	UInt32 target = 0;
 
 	switch (skse->runtimeVersion)
 	{
-		case 0x01150000: target = 0x009A0035; break;
-		case 0x020C0000: target = 0x009A0AF5; break;
+		case RUNTIME_VERSION_1_1_21_0: target = 0x009A0035; break;
+		case RUNTIME_VERSION_1_2_12_0: target = 0x009A0AF5; break;
 		
 		default:
 		{
@@ -70,7 +69,6 @@ bool plugin_load(const SKSEInterface *skse)
 		}
 	}
 
-	target = adjust_address(exe, target);
 	if (memcmp((void *)target, original, 2) != 0)
 	{
 		_ERROR("code at target is different, bad address?");
@@ -78,5 +76,6 @@ bool plugin_load(const SKSEInterface *skse)
 	}
 
 	_MESSAGE("applying patch");
-	return patch_code(target, nops, 2);
+	SafeWriteBuf(target, nops, 2);
+	return true;
 }

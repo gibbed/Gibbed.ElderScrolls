@@ -40,7 +40,8 @@ bool plugin_query(const SKSEInterface *skse, PluginInfo *info)
 		return false;
 	}
 
-	if (skse->runtimeVersion != RUNTIME_VERSION_1_1_21_0)
+	if ( (skse->runtimeVersion != RUNTIME_VERSION_1_1_21_0) &&
+	     (skse->runtimeVersion != RUNTIME_VERSION_1_3_7_0) )
 	{
 		_ERROR("unsupported runtime version");
 		return false;
@@ -52,7 +53,8 @@ bool plugin_query(const SKSEInterface *skse, PluginInfo *info)
 
 bool plugin_load(const SKSEInterface *skse)
 {
-	if (skse->runtimeVersion != RUNTIME_VERSION_1_1_21_0)
+	if ( (skse->runtimeVersion != RUNTIME_VERSION_1_1_21_0) &&
+	     (skse->runtimeVersion != RUNTIME_VERSION_1_3_7_0) )
 	{
 		return false;
 	}

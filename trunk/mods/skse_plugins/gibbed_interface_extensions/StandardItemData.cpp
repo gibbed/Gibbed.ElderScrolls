@@ -45,6 +45,15 @@ namespace Scaleform
 		Addresses.ScaleformCreateNumber = 0x00999B80;
 		Addresses.ScaleformSetMember = 0x00999BD0;
 	}
+	
+	void SetupAddresses1_3(void)
+	{
+		memset(&Addresses, 0xCC, sizeof(Addresses));
+
+		Addresses.ScaleformCreateBool = 0x0099B8D0;
+		Addresses.ScaleformCreateNumber = 0x0099B8F0;
+		Addresses.ScaleformSetMember = 0x0099B940;
+	}
 
 	typedef struct
 	{
@@ -125,10 +134,20 @@ namespace Game
 		UInt32 GetStandardItemData;
 	}
 	Addresses;
+	
+	struct _Constants
+	{
+		UInt32	FormType_Armor;
+		UInt32	FormType_Weapon;
+		UInt32	FormType_Ammo;
+		UInt32	FormType_Potion;
+	}
+	Constants;
 
 	void SetupAddresses1_1(void)
 	{
 		memset(&Addresses, 0xCC, sizeof(Addresses));
+		memset(&Constants, 0xCC, sizeof(Constants));
 
 		Addresses.PlayerCharacter = 0x0155C064;
 
@@ -141,6 +160,34 @@ namespace Game
 
 		Addresses.SetupStandardItemData = 0x00999C40;
 		Addresses.GetStandardItemData = 0x009999C0;
+		
+		Constants.FormType_Armor = 0x1B;
+		Constants.FormType_Weapon = 0x2B;
+		Constants.FormType_Ammo = 0x2C;
+		Constants.FormType_Potion = 0x30;
+	}
+	
+	void SetupAddresses1_3(void)
+	{
+		memset(&Addresses, 0xCC, sizeof(Addresses));
+		memset(&Constants, 0xCC, sizeof(Constants));
+
+		Addresses.PlayerCharacter = 0x0156F334;
+
+		Addresses.GetFormType = 0x00403050;
+		Addresses.GetFormWeight = 0x0047F350;
+
+		Addresses.GetItemValue = 0x004A83B0;
+		Addresses.GetItemDamage = 0x008560A0;
+		Addresses.GetItemArmor = 0x00855D60;
+
+		Addresses.SetupStandardItemData = 0x0099B9B0;
+		Addresses.GetStandardItemData = 0x0099B730;
+		
+		Constants.FormType_Armor = 0x1A;
+		Constants.FormType_Weapon = 0x29;
+		Constants.FormType_Ammo = 0x2A;
+		Constants.FormType_Potion = 0x2E;
 	}
 
 	typedef struct
@@ -169,7 +216,7 @@ namespace Game
 			add esp, 4
 		}
 	}
-
+	
 	typedef struct
 	{
 		Form *form;
@@ -188,7 +235,7 @@ namespace Game
 
 	double GetItemDamage(Item *item)
 	{
-		UInt32 func = Addresses.GetItemValue;
+		UInt32 func = Addresses.GetItemDamage;
 		void *pc = *(void **)Addresses.PlayerCharacter;
 
 		__asm
@@ -278,55 +325,54 @@ Game::StandardItemData * __stdcall MyGetStandardItemData(
 
 	int value = Game::GetItemValue(item);
 
-	//_MESSAGE("item %u %f %d", formType, weight, value);
+#ifdef _DEBUG
+	_MESSAGE("item %u %f %d", formType, weight, value);
+#endif
 
 	Scaleform::SetMemberBool(&info->unknown10, "extended", true);
 	Scaleform::SetMemberNumber(&info->unknown10, "formType", (double)formType);
 	Scaleform::SetMemberNumber(&info->unknown10, "weight", (double)weight);
 	Scaleform::SetMemberNumber(&info->unknown10, "value", (double)value);
 
-	switch (formType)
+	if (formType == Game::Constants.FormType_Armor)
 	{
-		case 27: // armor
-		{
-			double armor = Game::GetItemArmor(item);
-			armor = round(armor);
+		double armor = Game::GetItemArmor(item);
+		armor = round(armor);
 
-			//_MESSAGE("  armor %f", armor);
+#ifdef _DEBUG
+		_MESSAGE("  armor %f", armor);
+#endif
 
-			Scaleform::SetMemberNumber(&info->unknown10, "armor", armor);
-			break;
-		}
+		Scaleform::SetMemberNumber(&info->unknown10, "armor", armor);
+	}
+	else if (formType == Game::Constants.FormType_Weapon)
+	{
+		unsigned char weaponType = item->form->data[0xC4+0x31];
+		
+		double damage = Game::GetItemDamage(item);
+		damage = round(damage);
 
-		case 43: // weapon
-		{
-			unsigned char weaponType = item->form->data[0xC4+0x31];
-			
-			double damage = Game::GetItemDamage(item);
-			damage = round(damage);
+#ifdef _DEBUG
+		_MESSAGE("  weapon type %u damage %f", weaponType, damage);
+#endif
 
-			//_MESSAGE("  weapon type %u damage %f", weaponType, damage);
+		Scaleform::SetMemberNumber(&info->unknown10, "weaponType", (double)weaponType);
+		Scaleform::SetMemberNumber(&info->unknown10, "damage", damage);
+	}
+	else if (formType == Game::Constants.FormType_Ammo)
+	{
+		double damage = Game::GetItemDamage(item);
+		damage = round(damage);
 
-			Scaleform::SetMemberNumber(&info->unknown10, "weaponType", (double)weaponType);
-			Scaleform::SetMemberNumber(&info->unknown10, "damage", damage);
-			break;
-		}
+#ifdef _DEBUG
+		_MESSAGE("  damage %f", damage);
+#endif
 
-		case 44: // ammo
-		{
-			double damage = Game::GetItemDamage(item);
-			damage = round(damage);
-
-			//_MESSAGE("  damage %f", damage);
-
-			Scaleform::SetMemberNumber(&info->unknown10, "damage", damage);
-			break;
-		}
-
-		case 48: // potion
-		{
-			break;
-		}
+		Scaleform::SetMemberNumber(&info->unknown10, "damage", damage);
+	}
+	else if (formType == Game::Constants.FormType_Potion)
+	{
+		//
 	}
 
 	return info;
@@ -361,6 +407,21 @@ bool patch_StandardItemData(UInt32 version)
 			functionCall = 0x00999711;
 
 			unsigned char original[] = { 0xE8, 0xAA, 0x02, 0x00, 0x00 };
+			if (memcmp((void *)functionCall, original, sizeof(original)) != 0)
+			{
+				return false;
+			}
+
+			break;
+		}
+		
+		case RUNTIME_VERSION_1_3_7_0:
+		{
+			Scaleform::SetupAddresses1_3();
+			Game::SetupAddresses1_3();
+			functionCall = 0x0099B511;
+
+			unsigned char original[] = { 0xE8, 0x1A, 0x02, 0x00, 0x00 };
 			if (memcmp((void *)functionCall, original, sizeof(original)) != 0)
 			{
 				return false;

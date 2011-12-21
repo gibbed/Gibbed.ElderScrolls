@@ -42,7 +42,8 @@ bool plugin_query(const SKSEInterface *skse, PluginInfo *info)
 
 	if (skse->runtimeVersion != RUNTIME_VERSION_1_1_21_0 &&
 		skse->runtimeVersion != RUNTIME_VERSION_1_2_12_0 &&
-		skse->runtimeVersion != RUNTIME_VERSION_1_3_7_0)
+		skse->runtimeVersion != RUNTIME_VERSION_1_3_7_0 &&
+		skse->runtimeVersion != RUNTIME_VERSION_1_3_10_0)
 	{
 		_ERROR("unsupported runtime version");
 		return false;
@@ -64,7 +65,8 @@ bool plugin_load(const SKSEInterface *skse)
 		case RUNTIME_VERSION_1_1_21_0: target = 0x009A0035; break;
 		case RUNTIME_VERSION_1_2_12_0: target = 0x009A0AF5; break;
 		case RUNTIME_VERSION_1_3_7_0:  target = 0x009A1D15; break;
-		
+		case RUNTIME_VERSION_1_3_10_0: target = 0x009A2E05; break;
+
 		default:
 		{
 			return false;

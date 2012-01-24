@@ -43,7 +43,8 @@ bool plugin_query(const SKSEInterface *skse, PluginInfo *info)
 	if (skse->runtimeVersion != RUNTIME_VERSION_1_1_21_0 &&
 		skse->runtimeVersion != RUNTIME_VERSION_1_2_12_0 &&
 		skse->runtimeVersion != RUNTIME_VERSION_1_3_7_0 &&
-		skse->runtimeVersion != RUNTIME_VERSION_1_3_10_0)
+		skse->runtimeVersion != RUNTIME_VERSION_1_3_10_0 &&
+		skse->runtimeVersion != RUNTIME_VERSION_1_4_15_0)
 	{
 		_ERROR("unsupported runtime version");
 		return false;
@@ -56,7 +57,6 @@ bool plugin_query(const SKSEInterface *skse, PluginInfo *info)
 bool plugin_load(const SKSEInterface *skse)
 {
 	unsigned char nops[] = { 0x90, 0x90 };
-	unsigned char original[] = { 0x75, 0x20 };
 
 	UInt32 target = 0;
 
@@ -66,6 +66,7 @@ bool plugin_load(const SKSEInterface *skse)
 		case RUNTIME_VERSION_1_2_12_0: target = 0x009A0AF5; break;
 		case RUNTIME_VERSION_1_3_7_0:  target = 0x009A1D15; break;
 		case RUNTIME_VERSION_1_3_10_0: target = 0x009A2E05; break;
+		case RUNTIME_VERSION_1_4_15_0: target = 0x0083A63C; break;
 
 		default:
 		{
@@ -73,10 +74,23 @@ bool plugin_load(const SKSEInterface *skse)
 		}
 	}
 
-	if (memcmp((void *)target, original, 2) != 0)
+	if (skse->runtimeVersion < RUNTIME_VERSION_1_4_15_0)
 	{
-		_ERROR("code at target is different, bad address?");
-		return false;
+		unsigned char original[] = { 0x75, 0x20 };
+		if (memcmp((void *)target, original, 2) != 0)
+		{
+			_ERROR("code at target is different, bad address?");
+			return false;
+		}
+	}
+	else
+	{
+		unsigned char original[] = { 0x75, 0x15 };
+		if (memcmp((void *)target, original, 2) != 0)
+		{
+			_ERROR("code at target is different, bad address?");
+			return false;
+		}
 	}
 
 	_MESSAGE("applying patch");
